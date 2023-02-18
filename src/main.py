@@ -39,6 +39,15 @@ def parse_parameters():
 
     print(f'Video path: {video_path}\nModel: {model}\n')
 
+    model = whisper.load_model(model)
+    audio_path = get_audio(video_path)
+    subtitles_path = get_subtitles(
+        video_path,
+        audio_path,
+        output_dir,
+        lambda audioPath: model.transcribe(audioPath, **args)
+    )
+
 def get_audio(video_path):
     print(f'Extracting audio from {filename(video_path)}...')
     audio_path = os.path.join(tempfile.gettempdir(), f'{filename(video_path)}.wav')
