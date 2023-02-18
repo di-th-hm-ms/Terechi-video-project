@@ -47,11 +47,31 @@ def get_audio(video_path):
 
 
 
-def get_audio(arg):
-    input = ffmpeg.input(arg)
-    return input.audio
+def get_subtitles(video_path, audio_path, output_dir, transcribe):
+    srt_path = os.path.join('.', f'{filename(video_path)}.srt')
 
-def get_subtitles(audo, srt_only, output_path, transcribeFunction):
+    print(f'Generating subtitles for {filename(video_path)}... This might take a while.')
+
+    try:
+        warnings.filterwarnings('ignore')
+        result = transcribe(audio_path)
+        warnings.filterwarnings('default')
+
+        with open(srt_path, 'w', encoding='utf-8') as srt:
+            for i, segment in enumerate(result["segments"], start=1):
+                print(
+                    f'{i}\n'
+                    f'{format_timestamp(segment["start"], always_include_hours=True)} --> '
+                    f'{format_timestamp(segment["end"], always_include_hours=True)}\n'
+                    f'{segment["text"].strip().replace("-->", "->")}\n',
+                    file=srt,
+                    flush=True,
+                )
+    except Error as e:
+        print(e.stderr)
+        raise SystemExit
+
+    return srt_path
     
 
 def get_data():
