@@ -30,8 +30,22 @@ def parse_parameters():
     args = parser.parse_args().__dict__
 
     model = args.pop('model')
-    output_path = args.pop('output_dir')
-    video = args.pop('video')
+def get_audio(video_path):
+    print(f'Extracting audio from {filename(video_path)}...')
+    audio_path = os.path.join(tempfile.gettempdir(), f'{filename(video_path)}.wav')
+
+    try:
+        ffmpeg.input(video_path).output(
+                audio_path,
+                acodec='pcm_s16le', ac=1, ar='16k'
+        ).run(quiet=True, overwrite_output=True)
+    except FFmpegError as e:
+        print(e.stderr)
+        raise SystemExit
+
+    return audio_path
+
+
 
 def get_audio(arg):
     input = ffmpeg.input(arg)
