@@ -19,10 +19,10 @@ def parse_parameters():
         required=True)
     parser.add_argument(
         '--model',
-        default='small',
+        default='tiny',
         choices=whisper.available_models(), help='The name of the Whisper model to use.')
     parser.add_argument(
-        '--output_dir',
+        '--output',
         '-o', type=str,
         default='.',
         help='The directory to save the outputs.')
