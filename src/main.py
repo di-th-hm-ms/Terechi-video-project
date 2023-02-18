@@ -10,11 +10,6 @@ from utils import filename, format_timestamp
 from ffmpeg import Error as FFmpegError
 
 def main():
-    parse_parameters()
-    get_subtitles()
-
-def parse_parameters():
-    global model, output_path, video
     parser = argparse.ArgumentParser(description='Add subtitles to a video.')
     parser.add_argument(
         '--video',
@@ -106,13 +101,7 @@ def get_subtitles(video_path, audio_path, output_dir, transcribe):
         raise SystemExit
 
     return srt_path
-    
 
-def get_data():
-    global model, output_path, video
-    model = whisper.load_model(model)
-    audios = get_audio(video)
-    subtitles = get_subtitles(
-        audios, False, output_path, lambda audioPath: model.transcribe(audioPath, **args))
+
 
 main()
