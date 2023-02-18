@@ -48,6 +48,22 @@ def parse_parameters():
         lambda audioPath: model.transcribe(audioPath, **args)
     )
 
+    print(f'Overlaying subtitles to {filename(video_path)}...')
+
+    output_path = os.path.join(output_dir, f'{filename(video_path)}.mp4');
+    video = ffmpeg.input(video_path)
+    audio = video.audio
+
+    try:
+        ffmpeg.concat(video.filter("subtitles", subtitles_path), audio, v=1, a=1).output(output_path).run()
+    except FFmpegError as e:
+        print(e.stderr)
+        raise SystemExit
+
+    print(f'Saved subtitled video to {os.path.abspath(output_path)}.')
+
+
+
 def get_audio(video_path):
     print(f'Extracting audio from {filename(video_path)}...')
     audio_path = os.path.join(tempfile.gettempdir(), f'{filename(video_path)}.wav')
