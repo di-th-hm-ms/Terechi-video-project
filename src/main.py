@@ -1,9 +1,13 @@
+import os
 import whisper
 import sys
 import argparse
 import ffmpeg
-
-global model, output_path, video
+import tempfile
+import warnings
+from typing import Iterator, TextIO
+from utils import filename, format_timestamp
+from ffmpeg import Error as FFmpegError
 
 def main():
     parse_parameters()
