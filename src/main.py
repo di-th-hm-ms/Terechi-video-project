@@ -34,6 +34,11 @@ def parse_parameters():
     args = parser.parse_args().__dict__
 
     model = args.pop('model')
+    output_dir = args.pop('output')
+    video_path = ''.join(args.pop('video'))
+
+    print(f'Video path: {video_path}\nModel: {model}\n')
+
 def get_audio(video_path):
     print(f'Extracting audio from {filename(video_path)}...')
     audio_path = os.path.join(tempfile.gettempdir(), f'{filename(video_path)}.wav')
