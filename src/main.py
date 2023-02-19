@@ -40,6 +40,8 @@ def main():
     video_path = ''.join(args.pop('video'))
     translation_language = args.pop('translation')
 
+    # Create directory for output
+    os.makedirs(output_dir, exist_ok=True)
 
     print(f'Video path: {video_path}\nModel: {model}\n')
 
