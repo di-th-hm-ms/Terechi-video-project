@@ -1,0 +1,16 @@
+# Ignore pycache
+src/__pycache__
+
+# Ignore video folder and containing files
+/videos
+/videos/*
+
+# Ignore video file outputs
+*/*.mp4
+*.mp4
+*/*.wav
+*.wav
+
+#Ignore subtitle files
+*/*.srt
+*.srt
