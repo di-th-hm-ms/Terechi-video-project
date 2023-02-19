@@ -7,6 +7,7 @@ import tempfile
 import warnings
 from typing import Iterator, TextIO
 from utils import filename, format_timestamp
+from gpt import get_translation
 from ffmpeg import Error as FFmpegError
 
 def main():
@@ -31,6 +32,11 @@ def main():
         type=str,
         default='English',
         help='The language translation of the supplmentary subtitles.')
+    parser.add_argument(
+        '--apiKey',
+        type=str,
+        help='The API key used to make requests with OpenAI.',
+        required=True)
 
     args = parser.parse_args().__dict__
 
@@ -39,6 +45,7 @@ def main():
     output_dir = args.pop('output')
     video_path = ''.join(args.pop('video'))
     translation_language = args.pop('translation')
+    api_key = args.pop('apiKey')
 
     # Create directory for output
     os.makedirs(output_dir, exist_ok=True)
@@ -53,6 +60,7 @@ def main():
         audio_path,
         output_dir,
         translation_language,
+        api_key,
         lambda audioPath: model.transcribe(audioPath, **args)
     )
 
@@ -100,10 +108,9 @@ def get_audio(video_path):
 '''
 Creates temporary subtitle file extracted from video using Whisper.
 '''
-def get_subtitles(video_path, audio_path, output_dir, translation_language, transcribe):
+def get_subtitles(video_path, audio_path, output_dir, translation_language, api_key, transcribe):
     # Prepare subtitle path
     srt_path = os.path.join('.', f'{filename(video_path)}.srt')
-    translated_srt_path = os.path.join('.', f'{filename(video_path)}-translated.srt')
 
     print(f'Generating subtitles for {filename(video_path)}... This might take a while.')
 
@@ -113,29 +120,42 @@ def get_subtitles(video_path, audio_path, output_dir, translation_language, tran
         result = transcribe(audio_path)
         warnings.filterwarnings('default')
 
-        originalSubtitles = ''
+        subtitles_to_translate = ''
+        for i, segment in enumerate(result["segments"], start=1):
+            # Format line
+            subtitles_to_translate += (
+                f'{i}:'
+                f'{segment["text"].strip().replace("-->", "->")}\n'
+            )
 
-        # Write results to subtitles file
+        # Translate
+        translated_subtitles = get_translation(api_key, subtitles_to_translate, translation_language)
+
+        # Parse original subtitles to dictionary
+        original_subtitles_dict = {}
+        for item in subtitles_to_translate.split('\n'):
+            if (':' in item):
+                split = item.split(':')
+                original_subtitles_dict[int(split[0])] = split[1]
+
+        # Parse translated subtitles to dictionary
+        translated_subtitles_dict = {}
+        for item in translated_subtitles.split('\n'):
+            if (':' in item):
+                split = item.split(':')
+                translated_subtitles_dict[int(split[0])] = split[1]
+
+        # Merge original and translated subtitles and write to subtitles file
         with open(srt_path, 'w', encoding='utf-8') as srt:
             for i, segment in enumerate(result["segments"], start=1):
-                # Format line
-                originalSubtitles = (f'{i}\n'
+                print(
+                    f'{i}\n'
                     f'{format_timestamp(segment["start"], always_include_hours=True)} --> '
                     f'{format_timestamp(segment["end"], always_include_hours=True)}\n'
-                    f'{segment["text"].strip().replace("-->", "->")}\n')
-                # Write to file
-                print(
-                    originalSubtitles,
+                    f'{original_subtitles_dict[i]}\n{translated_subtitles_dict[i]}\n',
                     file=srt,
                     flush=True,
                 )
-
-        # Generated translated .srt file
-        print(
-            get_translation(originalSubtitles, translation_language),
-            file=srt,
-            flush=True,
-        )
     except OSError as e:
         print(e)
         raise SystemExit

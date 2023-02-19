@@ -6,9 +6,8 @@ import requests
 '''
 Call openai API and return the result translated to some language.
 '''
-def get_translation(text_to_translate, language):
+def get_translation(api_key, text_to_translate, language):
     prompt = f'translate the next sentences to {language}. {text_to_translate}'
-    api_key = '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'
 
     req_body = {
         'model': 'text-davinci-003',
