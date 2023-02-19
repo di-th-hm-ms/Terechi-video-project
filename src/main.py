@@ -26,6 +26,11 @@ def main():
         '-o', type=str,
         default='.',
         help='The directory to save the outputs.')
+    parser.add_argument(
+        '--translation',
+        type=str,
+        default='English',
+        help='The language translation of the supplmentary subtitles.')
 
     args = parser.parse_args().__dict__
 
@@ -33,6 +38,8 @@ def main():
     model = args.pop('model')
     output_dir = args.pop('output')
     video_path = ''.join(args.pop('video'))
+    translation_language = args.pop('translation')
+
 
     print(f'Video path: {video_path}\nModel: {model}\n')
 
