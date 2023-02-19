@@ -52,6 +52,7 @@ def main():
         video_path,
         audio_path,
         output_dir,
+        translation_language,
         lambda audioPath: model.transcribe(audioPath, **args)
     )
 
@@ -99,9 +100,10 @@ def get_audio(video_path):
 '''
 Creates temporary subtitle file extracted from video using Whisper.
 '''
-def get_subtitles(video_path, audio_path, output_dir, transcribe):
+def get_subtitles(video_path, audio_path, output_dir, translation_language, transcribe):
     # Prepare subtitle path
     srt_path = os.path.join('.', f'{filename(video_path)}.srt')
+    translated_srt_path = os.path.join('.', f'{filename(video_path)}-translated.srt')
 
     print(f'Generating subtitles for {filename(video_path)}... This might take a while.')
 
@@ -111,19 +113,31 @@ def get_subtitles(video_path, audio_path, output_dir, transcribe):
         result = transcribe(audio_path)
         warnings.filterwarnings('default')
 
+        originalSubtitles = ''
+
         # Write results to subtitles file
         with open(srt_path, 'w', encoding='utf-8') as srt:
             for i, segment in enumerate(result["segments"], start=1):
-                print(
-                    f'{i}\n'
+                # Format line
+                originalSubtitles = (f'{i}\n'
                     f'{format_timestamp(segment["start"], always_include_hours=True)} --> '
                     f'{format_timestamp(segment["end"], always_include_hours=True)}\n'
-                    f'{segment["text"].strip().replace("-->", "->")}\n',
+                    f'{segment["text"].strip().replace("-->", "->")}\n')
+                # Write to file
+                print(
+                    originalSubtitles,
                     file=srt,
                     flush=True,
                 )
-    except Error as e:
-        print(e.stderr)
+
+        # Generated translated .srt file
+        print(
+            get_translation(originalSubtitles, translation_language),
+            file=srt,
+            flush=True,
+        )
+    except OSError as e:
+        print(e)
         raise SystemExit
 
     return srt_path
