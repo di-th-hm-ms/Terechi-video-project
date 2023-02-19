@@ -10,6 +10,7 @@ from utils import filename, format_timestamp
 from ffmpeg import Error as FFmpegError
 
 def main():
+    # Add command line arguments
     parser = argparse.ArgumentParser(description='Add subtitles to a video.')
     parser.add_argument(
         '--video',
@@ -28,12 +29,14 @@ def main():
 
     args = parser.parse_args().__dict__
 
+    # Read model, output directory and video path from command line arguments
     model = args.pop('model')
     output_dir = args.pop('output')
     video_path = ''.join(args.pop('video'))
 
     print(f'Video path: {video_path}\nModel: {model}\n')
 
+    # Get model, audio and subtitle data
     model = whisper.load_model(model)
     audio_path = get_audio(video_path)
     subtitles_path = get_subtitles(
@@ -45,10 +48,14 @@ def main():
 
     print(f'Overlaying subtitles to {filename(video_path)}...')
 
-    output_path = os.path.join(output_dir, f'{filename(video_path)}.mp4');
+    # Prepare output path
+    output_path = os.path.join(output_dir, f'{filename(video_path)}.mp4')
+
+    # Prepare video and audio data
     video = ffmpeg.input(video_path)
     audio = video.audio
 
+    # Overlay subtitles to video
     try:
         ffmpeg.concat(video.filter("subtitles", subtitles_path), audio, v=1, a=1).output(output_path).run()
     except FFmpegError as e:
@@ -58,11 +65,16 @@ def main():
     print(f'Saved subtitled video to {os.path.abspath(output_path)}.')
 
 
-
+'''
+Creates temporary audio file extracted from video using ffmpeg.
+'''
 def get_audio(video_path):
     print(f'Extracting audio from {filename(video_path)}...')
+
+    # Prepare audio path
     audio_path = os.path.join(tempfile.gettempdir(), f'{filename(video_path)}.wav')
 
+    # Extract audio from video
     try:
         ffmpeg.input(video_path).output(
                 audio_path,
@@ -75,17 +87,22 @@ def get_audio(video_path):
     return audio_path
 
 
-
+'''
+Creates temporary subtitle file extracted from video using Whisper.
+'''
 def get_subtitles(video_path, audio_path, output_dir, transcribe):
+    # Prepare subtitle path
     srt_path = os.path.join('.', f'{filename(video_path)}.srt')
 
     print(f'Generating subtitles for {filename(video_path)}... This might take a while.')
 
+    # Transcribe subtitles
     try:
         warnings.filterwarnings('ignore')
         result = transcribe(audio_path)
         warnings.filterwarnings('default')
 
+        # Write results to subtitles file
         with open(srt_path, 'w', encoding='utf-8') as srt:
             for i, segment in enumerate(result["segments"], start=1):
                 print(
@@ -101,7 +118,6 @@ def get_subtitles(video_path, audio_path, output_dir, transcribe):
         raise SystemExit
 
     return srt_path
-
 
 
 main()
