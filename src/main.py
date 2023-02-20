@@ -1,15 +1,22 @@
 import os
-import whisper
 import sys
 import argparse
-import ffmpeg
-import tempfile
 import warnings
+
+import tempfile
 from typing import Iterator, TextIO
-from utils import filename, format_timestamp
+
+import whisper
 from gpt import get_translation
+
+import ffmpeg
 from ffmpeg import Error as FFmpegError
 
+from utils import filename, format_timestamp
+
+'''
+Generates subtitles with translations and overlays it on a specified video.
+'''
 def main():
     # Add command line arguments
     parser = argparse.ArgumentParser(description='Add subtitles to a video.')
@@ -75,7 +82,13 @@ def main():
 
     # Overlay subtitles to video
     try:
-        ffmpeg.concat(video.filter("subtitles", subtitles_path), audio, v=1, a=1).output(output_path).run()
+        ffmpeg.concat(
+            video.filter(
+                'subtitles',
+                subtitles_path,
+                force_style='Fontname=Roboto,Fontsize=12,MarginV=18,BorderStyle=4,Shadow=8,BackColour=&H4D000000'
+            ), audio, v=1, a=1
+        ).output(output_path).run()
     except FFmpegError as e:
         print(e.stderr)
         raise SystemExit
@@ -127,6 +140,10 @@ def get_subtitles(video_path, audio_path, output_dir, translation_language, api_
                 f'{i}:'
                 f'{segment["text"].strip().replace("-->", "->")}\n'
             )
+
+        # Uncomment this to use local translation file
+        # with open(f'{filename(video_path)}-translated.srt', 'r') as file:
+        #     translated_subtitles = file.read()
 
         # Translate
         translated_subtitles = get_translation(api_key, subtitles_to_translate, translation_language)
